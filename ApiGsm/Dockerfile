@@ -1,6 +1,8 @@
 ﻿# Sử dụng .NET Core SDK làm base image
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS base
 WORKDIR /app
+EXPOSE 80
+EXPOSE 443
 
 # Sử dụng .NET Core SDK để build ứng dụng
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
