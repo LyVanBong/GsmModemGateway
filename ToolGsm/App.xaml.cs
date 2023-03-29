@@ -16,7 +16,6 @@ namespace ToolGsm
 
         protected override void RegisterTypes(IContainerRegistry containerRegistry)
         {
-
         }
     }
 }
