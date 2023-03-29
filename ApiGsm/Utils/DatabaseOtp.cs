@@ -1,6 +1,4 @@
-﻿using ApiGsm.Models;
-
-namespace ApiGsm.Utils;
+﻿namespace ApiGsm.Utils;
 
 public static class DatabaseOtp
 {

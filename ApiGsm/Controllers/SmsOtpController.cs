@@ -1,6 +1,4 @@
-﻿using ApiGsm.Utils;
-
-namespace ApiGsm.Controllers
+﻿namespace ApiGsm.Controllers
 {
     [Route("api/v1/otp")]
     [ApiController]

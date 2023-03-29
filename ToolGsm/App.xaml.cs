@@ -1,8 +1,4 @@
-﻿using Prism.Ioc;
-using System.Windows;
-using ToolGsm.Views;
-
-namespace ToolGsm
+﻿namespace ToolGsm
 {
     /// <summary>
     /// Interaction logic for App.xaml

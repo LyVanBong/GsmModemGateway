@@ -1,13 +1,5 @@
-﻿using Prism.Mvvm;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.IO.Ports;
-using System.Linq;
-using System.Management;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
+﻿using System.Text.Json;
+using System.Windows.Threading;
 
 namespace ToolGsm.ViewModels
 {
@@ -62,10 +54,54 @@ namespace ToolGsm.ViewModels
                         _onoffSim.Add(sp.PortName, value: true);
                         _recordIff.Add(sp.PortName, value: false);
                         _keyidbyte.Add(sp.PortName, 1);
-                        SendSms(sp, "0356977131", "Ban da nhan duoc 100 ti do la tu peter");
                         count++;
                     }
                 }
+            }
+
+            DispatcherTimer timer = new DispatcherTimer();
+            timer.Interval = TimeSpan.FromSeconds(15);
+            timer.Tick += timer_Tick;
+            timer.Start();
+        }
+
+        private void timer_Tick(object sender, EventArgs e)
+        {
+            _ = GetSmsOtp();
+        }
+
+        private List<Otp> _otps = new();
+        private readonly string _urlOtp = "https://otp.ole777nhacai.com/api/v1/otp/all";
+        private bool _isGetSmsOtp = false;
+
+        private async Task GetSmsOtp()
+        {
+            if (_isGetSmsOtp) return;
+            _isGetSmsOtp = true;
+            try
+            {
+                var client = new HttpClient();
+                var request = new HttpRequestMessage(HttpMethod.Get, _urlOtp);
+                var response = await client.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+                var json = await response.Content.ReadAsStringAsync();
+
+                var data = JsonSerializer.Deserialize<List<Otp>>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+                if (data != null && data.Any())
+                {
+                    _otps.AddRange(data);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+            }
+            finally
+            {
+                _isGetSmsOtp = false;
             }
         }
 
@@ -80,53 +116,20 @@ namespace ToolGsm.ViewModels
             {
                 bytesRead = sp.Read(buffer, 0, buffer.Length);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Debug.WriteLine(ex.Message);
             }
             rec += Encoding.ASCII.GetString(buffer, 0, bytesRead);
             rec2 = Encoding.UTF8.GetString(buffer, 0, bytesRead);
             _recport[sp.PortName] += rec;
-            if (rec.Contains("CPIN: NOT READY"))
-            {
-                rec = "";
-                int count = _numberPort[sp.PortName];
-                _recport[sp.PortName] = "";
-            }
-            if (rec.Contains("Call Ready"))
-            {
-                rec = "";
-                _recport[sp.PortName] = "";
-            }
-            if (_recport[sp.PortName].Contains("CMT"))
-            {
-            }
-
-            if (!rec.Contains("+CMTI") && !rec.Contains("CMT"))
-            {
-            }
-
-            if (_recport[sp.PortName].Contains("RING"))
-            {
-                _recport[sp.PortName] = "";
-                sp.Write("ATA\r");
-                Thread.Sleep(1000);
-                sp.Write("AT+QFDEL=\"RAM:*\"\r");
-                Thread.Sleep(1000);
-                sp.Write("AT+QAUDRD=1,\"RAM:voice.wav\",13;\r");
-                Thread.Sleep(2 * 1000);
-                sp.Write("AT+QAUDRD=0;\r");
-                Thread.Sleep(1000);
-                sp.Write("ATH\r");
-                Thread.Sleep(3000);
-                sp.Write("AT+QFDWL=\"RAM:voice.wav\";\r");
-            }
         }
 
         public void SendSms(SerialPort sp, string numnerPhone, string Content)
         {
             int count = _numberPort[sp.PortName];
-            string Status = "";
-            bool IsPDU = false;
+            string status = "";
+            bool isPdu = false;
             string prevContent = "";
             try
             {
@@ -164,18 +167,18 @@ namespace ToolGsm.ViewModels
             {
                 if (_recport[sp.PortName].Contains("CMS ERROR"))
                 {
-                    Status = "CMS ERROR";
+                    status = "CMS ERROR";
                     Content = "Please check again";
                     break;
                 }
                 if (_recport[sp.PortName].Contains("CMGS:"))
                 {
-                    Status = "Success";
+                    status = "Success";
                     break;
                 }
                 if (_recport[sp.PortName].Contains("CME ERROR"))
                 {
-                    Status = "CME ERROR";
+                    status = "CME ERROR";
                     Content = _recport[sp.PortName];
                     break;
                 }
@@ -185,12 +188,12 @@ namespace ToolGsm.ViewModels
                     CheckSMS++;
                     continue;
                 }
-                Status = "Not response";
+                status = "Not response";
                 Content = _recport[sp.PortName];
                 break;
             }
             _recport[sp.PortName] = "";
-            if (IsPDU)
+            if (isPdu)
             {
                 Content = prevContent;
             }

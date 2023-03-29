@@ -1,4 +1,4 @@
-﻿namespace ApiGsm.Models;
+﻿namespace ToolGsm.Models;
 
 public class Otp
 {

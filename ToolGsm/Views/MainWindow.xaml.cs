@@ -1,6 +1,4 @@
-﻿using System.Windows;
-
-namespace ToolGsm.Views
+﻿namespace ToolGsm.Views
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
