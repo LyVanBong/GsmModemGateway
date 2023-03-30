@@ -7,6 +7,7 @@ public class Otp
     public int SmsOpt { get; set; } = Random.Shared.Next(100000, 999999);
     public string NumberPhone { get; set; }
     public bool Status { get; set; } = false;
+    public DateTime CreateOtp { get; set; }
 
     public Otp(string smsContents, string numberPhone)
     {

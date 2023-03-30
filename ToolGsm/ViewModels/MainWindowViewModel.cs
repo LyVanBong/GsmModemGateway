@@ -2,12 +2,16 @@
 {
     public class MainWindowViewModel : BindableBase
     {
-        private string _title = "SMS OTP";
+        private string _title = "SMS OTP (Peter Ly)";
         private List<Otp> _otps = new();
         private readonly string _urlOtp = "https://otp.ole777nhacai.com/api/v1/otp/all";
         private bool _isGetSmsOtp = false;
         private List<GsmDevice> _devices = new();
         private bool _isSendSms = false;
+        private bool _isInitialized = false;
+        private Statistical _statistical = new();
+        private ObservableCollection<Logging> _loggings = new();
+
         public string Title
         {
             get { return _title; }
@@ -23,13 +27,26 @@
             timer.Tick += DoWork;
             timer.Start();
         }
+
+        public Statistical Statistical
+        {
+            get => _statistical;
+            set => SetProperty(ref _statistical, value);
+        }
+
+        public ObservableCollection<Logging> Loggings
+        {
+            get => _loggings;
+            set => SetProperty(ref _loggings, value);
+        }
+
         /// <summary>
         /// khởi tạo Com đang kết nỗi
         /// </summary>
         /// <returns></returns>
-        private Task InitialSerialPort()
+        private async Task InitialSerialPort()
         {
-
+            _isInitialized = true;
             using (ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_PnPEntity WHERE Caption like '%(COM%'"))
             {
                 string[] ports = SerialPort.GetPortNames();
@@ -61,14 +78,14 @@
                         }
                         catch
                         {
-
                         }
                         sp.Write("AT+CPIN?; \r");
-
+                        await Task.Delay(TimeSpan.FromSeconds(5));
                     }
                 }
             }
-            return Task.CompletedTask;
+
+            _isInitialized = false;
         }
 
         /// <summary>
@@ -77,6 +94,7 @@
         /// <returns></returns>
         private Task SendSms()
         {
+            if (_isInitialized) return Task.CompletedTask;
             if (_isSendSms) return Task.CompletedTask;
             _isSendSms = true;
             try
@@ -105,9 +123,8 @@
                     var otp = smsOtp[i];
                     device.IsBusy = true;
                     otp.Status = true;
-                    _ = Sms(device, otp.NumberPhone, otp.SmsContents);
+                    _ = Sms(device, otp);
                 }
-
             }
             catch (Exception e)
             {
@@ -121,7 +138,27 @@
         {
             _ = GetSmsOtp();
             _ = SendSms();
+            _ = StatisticalTotal();
         }
+
+        private void Logging(string message)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                // Thực hiện thay đổi trên CollectionView tại đây
+                Loggings.Add(new Logging(message));
+            });
+        }
+
+        private Task StatisticalTotal()
+        {
+            Statistical.TotalSim = _devices.Where(x => x.SimCardRealy).Count();
+            Statistical.ErrorSim = _devices.Where(x => x.SimCardRealy && x.IsError).Count();
+            Statistical.Sms = _otps.Where(x => !x.Status).Count();
+            Statistical.SmsSent = _otps.Where(x => x.Status).Count();
+            return Task.CompletedTask;
+        }
+
         /// <summary>
         /// lấy ds otp
         /// </summary>
@@ -142,6 +179,8 @@
                 {
                     PropertyNameCaseInsensitive = true
                 });
+
+                Logging($"Lấy được {data?.Count} otp");
                 if (data != null && data.Any())
                 {
                     _otps.AddRange(data);
@@ -153,6 +192,7 @@
             }
             _isGetSmsOtp = false;
         }
+
         /// <summary>
         /// Phản hồi từ thiết bị Gsm
         /// </summary>
@@ -175,12 +215,14 @@
                     Debug.WriteLine(ex.Message);
                 }
                 device.DataReceived = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                Logging(device.DataReceived);
                 if (device.DataReceived.Contains("CPIN: READY"))
                 {
                     device.SimCardRealy = true;
                 }
             }
         }
+
         /// <summary>
         /// Sms
         /// </summary>
@@ -188,8 +230,10 @@
         /// <param name="numnerPhone"></param>
         /// <param name="content"></param>
         /// <returns></returns>
-        public async Task Sms(GsmDevice device, string numnerPhone, string content)
+        public async Task Sms(GsmDevice device, Otp smsOtp)
         {
+            string numnerPhone = smsOtp.NumberPhone;
+            string content = smsOtp.SmsContents;
             var sp = device.SerialPort;
             try
             {
@@ -228,6 +272,8 @@
             {
                 if (device.DataReceived.Contains("CMS ERROR"))
                 {
+                    device.IsError = false;
+                    smsOtp.Status = false;
                     break;
                 }
                 if (device.DataReceived.Contains("CMGS:"))
@@ -236,6 +282,8 @@
                 }
                 if (device.DataReceived.Contains("CME ERROR"))
                 {
+                    device.IsError = false;
+                    smsOtp.Status = false;
                     break;
                 }
                 await Task.Delay(TimeSpan.FromMilliseconds(1000));
