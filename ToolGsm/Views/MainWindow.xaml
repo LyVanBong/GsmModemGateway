@@ -1,13 +1,73 @@
 ﻿<Window
     x:Class="ToolGsm.Views.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:prism="http://prismlibrary.com/"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:behaviors="clr-namespace:ToolGsm.Behaviors"
     Title="{Binding Title}"
     Width="525"
     Height="350"
-    prism:ViewModelLocator.AutoWireViewModel="True">
+    HorizontalAlignment="Center"
+    VerticalAlignment="Center"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+    WindowStartupLocation="CenterScreen"
+    WindowState="Normal">
     <Grid>
-        <ContentControl prism:RegionManager.RegionName="ContentRegion" />
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <StackPanel
+            Grid.Row="0"
+            Grid.Column="0"
+            Orientation="Horizontal">
+            <Label Content="Tổng sim:" />
+            <Label Content="{Binding Statistical.TotalSim}" />
+        </StackPanel>
+        <StackPanel
+            Grid.Row="0"
+            Grid.Column="1"
+            Orientation="Horizontal">
+            <Label Content="Sim lỗi: " />
+            <Label Content="{Binding Statistical.ErrorSim}" />
+        </StackPanel>
+        <StackPanel
+            Grid.Row="0"
+            Grid.Column="2"
+            Orientation="Horizontal">
+            <Label Content="Sms: " />
+            <Label Content="{Binding Statistical.Sms}" />
+        </StackPanel>
+        <StackPanel
+            Grid.Row="0"
+            Grid.Column="3"
+            Orientation="Horizontal">
+            <Label Content="Sms đã gửi: " />
+            <Label Content="{Binding Statistical.SmsSent}" />
+        </StackPanel>
+
+        <GroupBox
+            Grid.Row="1"
+            Grid.Column="0"
+            Grid.ColumnSpan="4"
+            Header="Nhật ký hoạt động">
+            <ListView ItemsSource="{Binding Loggings}">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <Label Content="{Binding Message}" />
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+                <b:Interaction.Behaviors>
+                    <behaviors:ScrollIntoViewBehavior />
+                </b:Interaction.Behaviors>
+            </ListView>
+        </GroupBox>
     </Grid>
 </Window>
