@@ -1,32 +1,35 @@
-﻿using System.Text.Json;
-using System.Windows.Threading;
-
-namespace ToolGsm.ViewModels
+﻿namespace ToolGsm.ViewModels
 {
     public class MainWindowViewModel : BindableBase
     {
-        private string _title = "Prism Application";
-
+        private string _title = "GSM";
+        private List<Otp> _otps = new();
+        private readonly string _urlOtp = "https://otp.ole777nhacai.com/api/v1/otp/all";
+        private bool _isGetSmsOtp = false;
+        private List<GsmDevice> _devices = new();
+        private bool _isSendSms = false;
         public string Title
         {
             get { return _title; }
             set { SetProperty(ref _title, value); }
         }
 
-        private List<SerialPort> _serialPort = new List<SerialPort>();
-
-        private Dictionary<string, string> _recport = new Dictionary<string, string>();
-
-        private Dictionary<string, int> _numberPort = new Dictionary<string, int>();
-
-        private Dictionary<string, bool> _recordIff = new Dictionary<string, bool>();
-        private Dictionary<string, bool> _onoffSim = new Dictionary<string, bool>();
-        private Dictionary<string, int> _keyidbyte = new Dictionary<string, int>();
-        private List<string> _inRiff = new List<string>();
-        private Dictionary<byte[], string> _recordValua = new Dictionary<byte[], string>();
-
         public MainWindowViewModel()
         {
+            _ = InitialSerialPort();
+
+            DispatcherTimer timer = new DispatcherTimer();
+            timer.Interval = TimeSpan.FromSeconds(5);
+            timer.Tick += DoWork;
+            timer.Start();
+        }
+        /// <summary>
+        /// khởi tạo Com đang kết nỗi
+        /// </summary>
+        /// <returns></returns>
+        private Task InitialSerialPort()
+        {
+
             using (ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_PnPEntity WHERE Caption like '%(COM%'"))
             {
                 string[] ports = SerialPort.GetPortNames();
@@ -36,9 +39,8 @@ namespace ToolGsm.ViewModels
                     Array.Sort(ports, (string a, string b) => int.Parse(Regex.Replace(a, "[^0-9]", "")) - int.Parse(Regex.Replace(b, "[^0-9]", "")));
                 }
                 List<string> list = new List<string>(ports);
-                int count = 0;
                 IEnumerable<string> lstPortfullname = from p in searcher.Get().Cast<ManagementBaseObject>().ToList()
-                                                      select p["Caption"].ToString();
+                    select p["Caption"].ToString();
                 foreach (string port in list)
                 {
                     if (lstPortfullname.FirstOrDefault((string s) => s.Contains("(" + port + ")") && s.Contains("XR21V1414")) != null)
@@ -48,32 +50,82 @@ namespace ToolGsm.ViewModels
                         sp.DataReceived += SerialPort_DataReceived;
                         sp.ReadTimeout = 3000;
                         sp.WriteTimeout = 3000;
-                        _recport.Add(sp.PortName, "");
-                        _serialPort.Add(sp);
-                        _numberPort.Add(sp.PortName, count);
-                        _onoffSim.Add(sp.PortName, value: true);
-                        _recordIff.Add(sp.PortName, value: false);
-                        _keyidbyte.Add(sp.PortName, 1);
-                        count++;
+                        _devices.Add(new GsmDevice(sp, sp.PortName));
+
+                        try
+                        {
+                            if (!sp.IsOpen)
+                            {
+                                sp.Open();
+                            }
+                        }
+                        catch
+                        {
+
+                        }
+                        sp.Write("AT+CPIN?; \r");
+
                     }
                 }
             }
-
-            DispatcherTimer timer = new DispatcherTimer();
-            timer.Interval = TimeSpan.FromSeconds(15);
-            timer.Tick += timer_Tick;
-            timer.Start();
+            return Task.CompletedTask;
         }
 
-        private void timer_Tick(object sender, EventArgs e)
+        /// <summary>
+        /// Gửi opt
+        /// </summary>
+        /// <returns></returns>
+        private Task SendSms()
+        {
+            if (_isSendSms) return Task.CompletedTask;
+            _isSendSms = true;
+            try
+            {
+                var smsOtp = _otps.Where(x => !x.Status).ToList();
+                if (!smsOtp.Any())
+                {
+                    _isSendSms = false;
+                    return Task.CompletedTask;
+                }
+                var devices = _devices.Where(x => x.SimCardRealy && !x.IsBusy).ToList();
+                if (!devices.Any())
+                {
+                    _isSendSms = false;
+                    return Task.CompletedTask;
+                }
+
+                var countDevice = devices.Count;
+                var countSmsOpt = smsOtp.Count;
+
+                int count = countDevice > countSmsOpt ? countSmsOpt : countDevice;
+
+                for (int i = 0; i < count; i++)
+                {
+                    var device = devices[i];
+                    var otp = smsOtp[i];
+                    device.IsBusy = true;
+                    otp.Status = true;
+                    _ = Sms(device, otp.NumberPhone, otp.SmsContents);
+                }
+
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+            }
+            _isSendSms = false;
+            return Task.CompletedTask;
+        }
+
+        private void DoWork(object sender, EventArgs e)
         {
             _ = GetSmsOtp();
+            _ = SendSms();
         }
-
-        private List<Otp> _otps = new();
-        private readonly string _urlOtp = "https://otp.ole777nhacai.com/api/v1/otp/all";
-        private bool _isGetSmsOtp = false;
-
+        /// <summary>
+        /// lấy ds otp
+        /// </summary>
+        /// <returns></returns>
         private async Task GetSmsOtp()
         {
             if (_isGetSmsOtp) return;
@@ -99,38 +151,46 @@ namespace ToolGsm.ViewModels
             {
                 Debug.WriteLine(e);
             }
-            finally
-            {
-                _isGetSmsOtp = false;
-            }
+            _isGetSmsOtp = false;
         }
-
+        /// <summary>
+        /// Phản hồi từ thiết bị Gsm
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         public void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
-            string rec = "";
-            string rec2 = "";
             SerialPort sp = (SerialPort)sender;
             byte[] buffer = new byte[sp.ReadBufferSize];
             int bytesRead = 0;
-            try
+            var device = _devices.FirstOrDefault(x => x.PortName == sp.PortName);
+            if (device != null)
             {
-                bytesRead = sp.Read(buffer, 0, buffer.Length);
+                try
+                {
+                    bytesRead = sp.Read(buffer, 0, buffer.Length);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                }
+                device.DataReceived = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                if (device.DataReceived.Contains("CPIN: READY"))
+                {
+                    device.SimCardRealy = true;
+                }
             }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
-            }
-            rec += Encoding.ASCII.GetString(buffer, 0, bytesRead);
-            rec2 = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-            _recport[sp.PortName] += rec;
         }
-
-        public void SendSms(SerialPort sp, string numnerPhone, string Content)
+        /// <summary>
+        /// Sms
+        /// </summary>
+        /// <param name="device"></param>
+        /// <param name="numnerPhone"></param>
+        /// <param name="content"></param>
+        /// <returns></returns>
+        public async Task Sms(GsmDevice device, string numnerPhone, string content)
         {
-            int count = _numberPort[sp.PortName];
-            string status = "";
-            bool isPdu = false;
-            string prevContent = "";
+            var sp = device.SerialPort;
             try
             {
                 if (!sp.IsOpen)
@@ -140,63 +200,53 @@ namespace ToolGsm.ViewModels
             }
             catch
             {
+                device.IsBusy = false;
                 return;
             }
-            _recport[sp.PortName] = "";
             sp.Write("AT+CPIN?; \r");
-            Thread.Sleep(500);
-            if (!_recport[sp.PortName].Contains("CPIN: READY"))
+            await Task.Delay(TimeSpan.FromMilliseconds(500));
+            if (!device.SimCardRealy)
             {
+                device.IsBusy = false;
                 return;
             }
 
             sp.Write("AT+CSCS=\"GSM\"; \r");
-            Thread.Sleep(100);
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
             sp.Write("AT+CMGF=1; \r");
-            Thread.Sleep(100);
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
             sp.Write("AT+CSMP=17,173,0,0; \r");
-            Thread.Sleep(100);
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
             numnerPhone = "\"" + numnerPhone + "\"";
-
             sp.Write("AT+CMGS=" + numnerPhone + "\r");
-            Thread.Sleep(1000);
-            sp.Write(Content + "\u001a");
-            Thread.Sleep(6000);
-            int CheckSMS = 0;
+            await Task.Delay(TimeSpan.FromMilliseconds(1000));
+            sp.Write(content + "\u001a");
+            await Task.Delay(TimeSpan.FromMilliseconds(6000));
+
+            int checkSms = 0;
             while (true)
             {
-                if (_recport[sp.PortName].Contains("CMS ERROR"))
+                if (device.DataReceived.Contains("CMS ERROR"))
                 {
-                    status = "CMS ERROR";
-                    Content = "Please check again";
                     break;
                 }
-                if (_recport[sp.PortName].Contains("CMGS:"))
+                if (device.DataReceived.Contains("CMGS:"))
                 {
-                    status = "Success";
                     break;
                 }
-                if (_recport[sp.PortName].Contains("CME ERROR"))
+                if (device.DataReceived.Contains("CME ERROR"))
                 {
-                    status = "CME ERROR";
-                    Content = _recport[sp.PortName];
                     break;
                 }
-                Thread.Sleep(1000);
-                if (CheckSMS < 2)
+                await Task.Delay(TimeSpan.FromMilliseconds(1000));
+                if (checkSms < 2)
                 {
-                    CheckSMS++;
+                    checkSms++;
                     continue;
                 }
-                status = "Not response";
-                Content = _recport[sp.PortName];
                 break;
             }
-            _recport[sp.PortName] = "";
-            if (isPdu)
-            {
-                Content = prevContent;
-            }
+            device.IsBusy = false;
         }
     }
 }
