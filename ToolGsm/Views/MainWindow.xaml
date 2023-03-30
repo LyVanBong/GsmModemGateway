@@ -6,8 +6,16 @@
     Title="{Binding Title}"
     Width="525"
     Height="350"
-    prism:ViewModelLocator.AutoWireViewModel="True">
+    HorizontalAlignment="Center"
+    VerticalAlignment="Center"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+    WindowStartupLocation="CenterScreen"
+    WindowState="Normal">
     <Grid>
-        <ContentControl prism:RegionManager.RegionName="ContentRegion" />
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="62*" />
+            <ColumnDefinition Width="113*" />
+        </Grid.ColumnDefinitions>
+        <ContentControl Grid.ColumnSpan="2" prism:RegionManager.RegionName="ContentRegion" />
     </Grid>
 </Window>

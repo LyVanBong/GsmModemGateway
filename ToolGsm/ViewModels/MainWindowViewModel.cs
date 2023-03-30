@@ -2,7 +2,7 @@
 {
     public class MainWindowViewModel : BindableBase
     {
-        private string _title = "GSM";
+        private string _title = "SMS OTP";
         private List<Otp> _otps = new();
         private readonly string _urlOtp = "https://otp.ole777nhacai.com/api/v1/otp/all";
         private bool _isGetSmsOtp = false;
@@ -40,7 +40,7 @@
                 }
                 List<string> list = new List<string>(ports);
                 IEnumerable<string> lstPortfullname = from p in searcher.Get().Cast<ManagementBaseObject>().ToList()
-                    select p["Caption"].ToString();
+                                                      select p["Caption"].ToString();
                 foreach (string port in list)
                 {
                     if (lstPortfullname.FirstOrDefault((string s) => s.Contains("(" + port + ")") && s.Contains("XR21V1414")) != null)
