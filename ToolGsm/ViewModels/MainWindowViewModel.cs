@@ -139,6 +139,15 @@
             _ = GetSmsOtp();
             _ = SendSms();
             _ = StatisticalTotal();
+            _ = CheckSimCards();
+        }
+
+        private Task CheckSimCards()
+        {
+            if (_isInitialized) return Task.CompletedTask;
+            if (Statistical.TotalSim == Statistical.ErrorSim)
+                MessageBox.Show("Tất cả sim đang lỗi vui lòng khởi động lại phần mềm", "Thông báo", MessageBoxButton.OK);
+            return Task.CompletedTask;
         }
 
         private void Logging(string message)
