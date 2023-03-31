@@ -80,7 +80,7 @@
                         {
                         }
                         sp.Write("AT+CPIN?; \r");
-                        await Task.Delay(TimeSpan.FromSeconds(5));
+                        await Task.Delay(TimeSpan.FromSeconds(3));
                     }
                 }
             }
@@ -105,7 +105,7 @@
                     _isSendSms = false;
                     return Task.CompletedTask;
                 }
-                var devices = _devices.Where(x => x.SimCardRealy && !x.IsBusy).ToList();
+                var devices = _devices.Where(x => x.SimCardRealy && !x.IsBusy && !x.IsError).ToList();
                 if (!devices.Any())
                 {
                     _isSendSms = false;
