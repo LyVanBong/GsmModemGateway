@@ -8,8 +8,8 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-builder.Services.AddHostedService<Worker>();
+builder.Services.AddCors();
+//builder.Services.AddHostedService<Worker>();
 
 var app = builder.Build();
 
@@ -19,6 +19,11 @@ var app = builder.Build();
 //    app.UseSwagger();
 //    app.UseSwaggerUI();
 //}
+
+app.UseCors(builder => builder
+       .AllowAnyOrigin()
+       .AllowAnyMethod()
+       .AllowAnyHeader());
 
 app.UseSwagger();
 app.UseSwaggerUI();

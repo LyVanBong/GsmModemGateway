@@ -43,7 +43,7 @@ public class Worker : BackgroundService
         {
             var client = new HttpClient();
             var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
-            request.Headers.Add("Authorization", "Bearer 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");
+            request.Headers.Add("Authorization", "Bearer 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");
             var d = $@"{{""model"":""gpt-3.5-turbo"",""messages"":[{{""role"":""user"",""content"":""{content}""}}]}}";
             var body = new StringContent(d, null, "application/json");
             request.Content = body;

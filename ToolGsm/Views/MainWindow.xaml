@@ -64,9 +64,7 @@
                         <Label Content="{Binding Message}" />
                     </DataTemplate>
                 </ListView.ItemTemplate>
-                <b:Interaction.Behaviors>
-                    <behaviors:ScrollIntoViewBehavior />
-                </b:Interaction.Behaviors>
+      
             </ListView>
         </GroupBox>
     </Grid>
