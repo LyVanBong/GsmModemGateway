@@ -6,7 +6,7 @@ public static class DatabaseOtp
 
     public static int AddOtp(string numberPhone)
     {
-        Otp otp = new Otp("Ma dang ky Ole777 cua ban la: {0}", numberPhone);
+        Otp otp = new Otp("Ma xac thuc OTP cua ban la: {0}", numberPhone);
         _otps.Add(otp);
         return otp.SmsOpt;
     }
