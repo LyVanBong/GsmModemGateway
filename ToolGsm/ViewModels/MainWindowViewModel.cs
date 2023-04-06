@@ -56,7 +56,6 @@
 
             // Send cancellation request to stop bot
             cts.Cancel();
-            
         }
 
         private async Task<string?> ChatGpt(string content)
@@ -112,7 +111,7 @@
                 cancellationToken: cancellationToken);
         }
 
-        Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
+        private Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
             var errorMessage = exception switch
             {
@@ -205,6 +204,7 @@
                 var devices = _devices.Where(x => x.SimCardRealy && !x.IsBusy && !x.IsError).ToList();
                 if (!devices.Any())
                 {
+                    _devices.ForEach(x => x.IsBusy = false);
                     _isSendSms = false;
                     return Task.CompletedTask;
                 }
@@ -242,6 +242,7 @@
         private Task CheckSimCards()
         {
             if (_isInitialized) return Task.CompletedTask;
+            if (Statistical.TotalSim == 0) return Task.CompletedTask;
             if (Statistical.TotalSim == Statistical.ErrorSim)
                 MessageBox.Show("Tất cả sim đang lỗi vui lòng khởi động lại phần mềm", "Thông báo", MessageBoxButton.OK);
             return Task.CompletedTask;
@@ -350,14 +351,12 @@
             }
             catch
             {
-                device.IsBusy = false;
                 return;
             }
             sp.Write("AT+CPIN?; \r");
             await Task.Delay(TimeSpan.FromMilliseconds(500));
             if (!device.SimCardRealy)
             {
-                device.IsBusy = false;
                 return;
             }
 
@@ -400,7 +399,6 @@
                 }
                 break;
             }
-            device.IsBusy = false;
         }
     }
 }
