@@ -4,7 +4,7 @@
     {
         private string _title = "SMS OTP (Peter Ly)";
         private List<Otp> _otps = new();
-        private readonly string _urlOtp = "https://otp.ole777nhacai.com/api/v1/otp/all";
+        private readonly string _urlOtp = "https://domain.com/api/v1/otp/all";
         private bool _isGetSmsOtp = false;
         private List<GsmDevice> _devices = new();
         private bool _isSendSms = false;
@@ -32,7 +32,7 @@
 
         private async Task InitialTeleBot()
         {
-            var botClient = new TelegramBotClient("5807966733:AAHQWANZTzZFXkGEa0zBzVTg-UV6cxzAtko");
+            var botClient = new TelegramBotClient("");
 
             using CancellationTokenSource cts = new();
 
@@ -64,7 +64,7 @@
             {
                 var client = new HttpClient();
                 var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
-                request.Headers.Add("Authorization", "Bearer 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");
+                request.Headers.Add("Authorization", "Bearer sk-token");
                 var d = $@"{{""model"":""gpt-3.5-turbo"",""messages"":[{{""role"":""user"",""content"":""{content}""}}]}}";
                 var body = new StringContent(d, null, "application/json");
                 request.Content = body;
