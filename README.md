@@ -1,27 +1,19 @@
-# GsmModemGateway
+# GsmModemGateway 📟
+> Dịch vụ API điều khiển GSM Modem để tự động gửi/nhận SMS (Worker Service).
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/LyVanBong/GsmModemGateway)
-![GitHub issues](https://img.shields.io/github/issues/LyVanBong/GsmModemGateway)
-![GitHub stars](https://img.shields.io/github/stars/LyVanBong/GsmModemGateway)
 
 ## 📝 Giới Thiệu
-Gsm Modem Gateway
-
-Đây là một trong những dự án mã nguồn mở được phát triển và duy trì bởi **LyVanBong**. Mã nguồn được chia sẻ với mục đích học tập và đóng góp cho cộng đồng.
+**GsmModemGateway** là một .NET Worker Service được thiết kế để kết nối và điều khiển các thiết bị GSM Modem/Dongle qua cổng COM/Serial. Dịch vụ cung cấp HTTP API để các ứng dụng khác có thể gửi lệnh SMS, USSD một cách dễ dàng.
 
 ## 🚀 Tính Năng
-- [x] Đang cập nhật...
-- [ ] Tính năng nổi bật sẽ được liệt kê tại đây.
+-   **REST API**: Gửi tin nhắn, kiểm tra tài khoản (USSD) qua HTTP.
+-   **Queue Management**: Quản lý hàng đợi tin nhắn thông minh.
+-   **Docker Support**: Dễ dàng triển khai trên Linux/Raspberry Pi.
 
-## 🛠 Cài Đặt
-Hướng dẫn cài đặt và sử dụng sẽ sớm được cập nhật.
-
-```bash
-# Clone dự án
-git clone https://github.com/LyVanBong/GsmModemGateway.git
-```
+## 🛠 Công Nghệ
+-   **Framework**: .NET Core Worker Service.
+-   **Library**: System.IO.Ports / GSMComm.
 
 ## 📞 Liên Hệ
-Nếu bạn có câu hỏi hoặc muốn đóng góp, vui lòng liên hệ:
-- **GitHub**: [LyVanBong](https://github.com/LyVanBong)
-- **Website**: [softty.net](https://softty.net)
+-   **GitHub**: [LyVanBong](https://github.com/LyVanBong)
