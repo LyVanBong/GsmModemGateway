@@ -25,6 +25,3 @@ git clone https://github.com/LyVanBong/GsmModemGateway.git
 Nếu bạn có câu hỏi hoặc muốn đóng góp, vui lòng liên hệ:
 - **GitHub**: [LyVanBong](https://github.com/LyVanBong)
 - **Website**: [softty.net](https://softty.net)
-
----
-*README được tạo tự động bởi trợ lý AI.*
